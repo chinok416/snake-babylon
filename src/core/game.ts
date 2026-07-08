@@ -39,10 +39,6 @@ export class Game {
         const hemilight = new HemisphericLight('hemiLight', new Vector3(0, 1, 0), this.scene);
         hemilight.intensity = 0.5;
 
-        // Пол
-        
-        
-
         return scene
     }
 
@@ -61,11 +57,9 @@ export class Game {
         const groundShape = groundPhysics.shape;
         groundShape.filterMembershipMask = 0b0010;  // Группа пола
         groundShape.filterCollideMask = 0b0011;
-
-        console.log('Creating snake...');
+        
         this.snake = new Snake(this.scene);
-        console.log('Snake created!', this.snake);
-
+        
         this.engine.runRenderLoop(()=>{
             this.scene.render();
         })
