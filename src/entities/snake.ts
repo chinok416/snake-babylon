@@ -1,22 +1,24 @@
 // Управление змейкой: создание сегментов и соединение их констрейнтами
 
-import { BallAndSocketConstraint, Color3, PointerDragBehavior, Vector3, type Scene } from "@babylonjs/core";
+import { BallAndSocketConstraint, Color3, PhysicsBody, PhysicsMotionType, PointerDragBehavior, Vector3, type Scene } from "@babylonjs/core";
 import { SnakeSegment } from "./snakeSegment";
+import type DustPool from "./dustPool";
 
 
 export class Snake {
-    snakeSegments: SnakeSegment[];
+    private snakeSegments: SnakeSegment[];
+    private dustPool: DustPool;
 
-    constructor(scene: Scene){
+    constructor(scene: Scene, groundBody: PhysicsBody, dustPool: DustPool){
         // создание сегментов
-        const segment1 = new SnakeSegment(scene, new Vector3(0, 15, 0), new Color3(0.1, 0.5, 0.15), 'segment-1');
-        const segment2 = new SnakeSegment(scene, new Vector3(4, 15, 0), new Color3(0.1, 0.5, 0.15), 'segment-2');
-        const segment3 = new SnakeSegment(scene, new Vector3(8, 15, 0), new Color3(0.1, 0.5, 0.15), 'segment-3');
-        const segment4 = new SnakeSegment(scene, new Vector3(12, 15, 0), new Color3(0.1, 0.5, 0.15), 'segment-4');
+        const segment1 = new SnakeSegment(scene, new Vector3(-21, 2, 0), new Color3(0.1, 0.5, 0.15), 'segment-1', dustPool);
+        const segment2 = new SnakeSegment(scene, new Vector3(-17, 2, 0), new Color3(0.1, 0.5, 0.15), 'segment-2', dustPool);
+        const segment3 = new SnakeSegment(scene, new Vector3(-13, 2, 0), new Color3(0.1, 0.5, 0.15), 'segment-3', dustPool);
+        const segment4 = new SnakeSegment(scene, new Vector3(-9, 2, 0), new Color3(0.1, 0.5, 0.15), 'segment-4', dustPool);
         
         this.snakeSegments = [segment1, segment2, segment3, segment4];
         this.snakeSegments.forEach(fragment=>{
-            fragment.createCollisions();
+            fragment.createCollisions(groundBody);
         })
 
         // получение тел
@@ -33,6 +35,7 @@ export class Snake {
             new Vector3(0, 1, 0) ,
             scene
         );
+        
         body1.addConstraint(body2, constraint1);
 
         const constraint2 = new BallAndSocketConstraint(
@@ -58,25 +61,26 @@ export class Snake {
             const mesh = segment.getMesh();
             const body = segment.getPhysicsBody();
 
-            const dragBehover = new PointerDragBehavior({
+            const dragBehavior = new PointerDragBehavior({
                 dragPlaneNormal: new Vector3(0, 1, 0)
             })
             // Начало перетаскивания
-            dragBehover.onDragStartObservable.add(()=>{
-                this.snakeSegments.forEach(seg=>{
-                    seg.getPhysicsBody().disablePreStep = false;
-                })
+            dragBehavior.onDragStartObservable.add(()=>{
+                body.setMotionType(PhysicsMotionType.STATIC)
+                body.disablePreStep = false;
             })
             
             // Конец перетаскивания
-            dragBehover.onDragEndObservable.add(()=>{
-                this.snakeSegments.forEach(seg=>{
-                    seg.getPhysicsBody().disablePreStep = true;
-                })
+            dragBehavior.onDragEndObservable.add(()=>{
+                    body.setMotionType(PhysicsMotionType.DYNAMIC)
+                    body.disablePreStep = true;
             })
-            mesh.addBehavior(dragBehover);
+            mesh.addBehavior(dragBehavior);
         })
-    
+    }
+
+    getSegments(){
+        return this.snakeSegments;
     }
 }
 
