@@ -18,12 +18,15 @@ export default class DustPool {
         for (let i=0; i < poolSize; i++){
             const myParticleSystem = new ParticleSystem('dustPerticle', 100, this.scene);
             // Текстура частиц
+            
             myParticleSystem.particleTexture = new Texture('/textures/RocketSmokeAlpha.png', this.scene);
+            myParticleSystem.blendMode = ParticleSystem.BLENDMODE_ADD;
+            
             // Временное положение частиц
             myParticleSystem.emitter = new Vector3(0, 0, 0);
             // Размер частиц
-            myParticleSystem.minSize = 0.2;
-            myParticleSystem.maxSize = 0.8;
+            myParticleSystem.minSize = 1.2;
+            myParticleSystem.maxSize = 1.8;
             // Скорость частиц
             myParticleSystem.minEmitPower = 0.5;
             myParticleSystem.maxEmitPower = 2;
