@@ -14,7 +14,7 @@ import { PhysicsManager } from '../systems/physicsManager';
 import { Snake } from '../entities/snake';
 import finishZone from '../entities/finishZone';
 import ObstacleRay from '../entities/obstacleRay';
-import DustPool from '../entities/dustPool';
+import DustPool from '../systems/dustPool';
 
 
 export class Game {

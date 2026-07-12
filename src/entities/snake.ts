@@ -2,7 +2,7 @@
 
 import { BallAndSocketConstraint, Color3, PhysicsBody, PhysicsMotionType, PointerDragBehavior, Vector3, type Scene } from "@babylonjs/core";
 import { SnakeSegment } from "./snakeSegment";
-import type DustPool from "./dustPool";
+import type DustPool from "../systems/dustPool";
 
 
 export class Snake {

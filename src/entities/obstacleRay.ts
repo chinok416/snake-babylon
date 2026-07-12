@@ -2,7 +2,7 @@
 
 import { Color3, Ray, RayHelper, Scene, Vector3 } from "@babylonjs/core";
 import type { SnakeSegment } from "./snakeSegment"; // Тип для сегмента
-import type DustPool from "./dustPool";            // Тип для пула пыли
+import type DustPool from "../systems/dustPool";            // Тип для пула пыли
 
 export default class ObstacleRay{
     private ray: Ray; 

@@ -10,8 +10,8 @@ import {
     StandardMaterial,
     Vector3
 } from "@babylonjs/core"
-import type DustPool from "./dustPool";
-import FragmentsPool from "./fragmentsPool";
+import type DustPool from "../systems/dustPool";
+import FragmentsPool from "../systems/fragmentsPool";
 
 export class SnakeSegment {
     private scene: Scene
