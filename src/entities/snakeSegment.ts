@@ -51,6 +51,11 @@ export class SnakeSegment {
         
         // Создание пула осколков для эффекта разрушения
         this.fragmentsPool = new FragmentsPool(this.scene, color);
+        
+        // Добавляем обновление пула осколков в цикл обновления сцены
+        this.scene.onBeforeRenderObservable.add(() => {
+            this.fragmentsPool.update();
+        });
     }
 
     // Настройка обработки коллизий для сегмента
