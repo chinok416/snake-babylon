@@ -9,7 +9,7 @@ import {
     PhysicsShapeType, 
     Scene, 
     StandardMaterial, 
-    Vector3 
+    Vector3
 } from "@babylonjs/core"
 
 

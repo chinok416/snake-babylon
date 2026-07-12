@@ -1,96 +1,109 @@
-import { 
-    Color3, 
-    MeshBuilder, 
-    PhysicsAggregate,  
-    PhysicsBody,  
-    PhysicsShapeType, 
-    StandardMaterial, 
-    Vector3, 
-    type Mesh, 
-    type Scene 
+import {
+    Color3,
+    Mesh,
+    MeshBuilder,
+    PhysicsAggregate,
+    PhysicsBody,
+    PhysicsShapeType,
+    Scene,
+    StandardMaterial,
+    Vector3,
 } from "@babylonjs/core";
 
-
-
-export default class FragmentsPool{
-    private mesh: Mesh[];
-    private bodies: PhysicsBody[];
+export default class FragmentsPool {
+    private meshes: Mesh[];
+    private aggregates: PhysicsAggregate[]; // Храним агрегаты
     private scene: Scene;
-    // private material: StandardMaterial;
 
     constructor(scene: Scene, color: Color3) {
         this.scene = scene;
-        this.mesh = [];
-        this.bodies = [];
+        this.meshes = [];
+        this.aggregates = [];
 
-        for (let num=0; num<6; num++){
-            // Создание фрагмента
-            const snakeFragment = MeshBuilder.CreateBox('snakeFragment', {width:2, height:1, depth:1.5}, this.scene);
-            // Позиционирование осколков случайным образом относительно сегмента змейки
-            snakeFragment.position = new Vector3(0, -100, 0);
-            // Материал фрагмента
-            const snakeFragmentMaterial = new StandardMaterial('snakeFragmentMaterial', this.scene);
-            snakeFragmentMaterial.diffuseColor = color;
-            snakeFragmentMaterial.specularColor = new Color3(0.4, 0.4, 0.4);
-            snakeFragmentMaterial.emissiveColor = new Color3(0.0, 0.0, 0.0);
-            snakeFragmentMaterial.ambientColor = new Color3(0.15, 0.15, 0.15);
-            snakeFragment.material = snakeFragmentMaterial;
-            snakeFragment.setEnabled(false);
-        
-            // Создание физики фрагмента
-            const snakeFragmentPhysicsBody = new PhysicsAggregate(snakeFragment, PhysicsShapeType.BOX, {mass: 1})
-            const fragmentShape = snakeFragmentPhysicsBody.shape;
-            fragmentShape.filterMembershipMask = 0b0000;  
-            fragmentShape.filterCollideMask = 0b0010;
+        for (let num = 0; num < 6; num++) {
+            // Создаём меш
+            const fragmentMesh = MeshBuilder.CreateBox('snakeFragment', { width: 2, height: 1, depth: 1.5 }, this.scene);
+            // Стартовая позиция — на уровне пола (Y=0), чтобы физика не тянула его вниз
+            fragmentMesh.position = new Vector3(0, 0, 0);
 
-            this.mesh.push(snakeFragment);
-            this.bodies.push(snakeFragmentPhysicsBody.body);
+            // Настраиваем материал
+            const fragmentMaterial = new StandardMaterial('snakeFragmentMaterial', this.scene);
+            fragmentMaterial.diffuseColor = color;
+            fragmentMaterial.specularColor = new Color3(0.4, 0.4, 0.4);
+            fragmentMaterial.emissiveColor = new Color3(0.0, 0.0, 0.0);
+            fragmentMaterial.ambientColor = new Color3(0.15, 0.15, 0.15);
+            fragmentMesh.material = fragmentMaterial;
+
+            // Скрываем по умолчанию
+            fragmentMesh.setEnabled(false);
+
+            // Создаём физический агрегат (тело + форма) — ОДИН РАЗ
+            const fragmentAggregate = new PhysicsAggregate(fragmentMesh, PhysicsShapeType.BOX, { mass: 1 });
+
+            // Настраиваем маски коллизий ОДИН РАЗ
+            const shape = fragmentAggregate.shape;
+            shape.filterMembershipMask = 0b0001;  // Группа "осколки"
+            shape.filterCollideMask = 0b0010;    // Столкнётся с полом (группа 0b0010)
+
+            // Сохраняем
+            this.meshes.push(fragmentMesh);
+            this.aggregates.push(fragmentAggregate);
         }
     }
 
-    // активация осколков
-    // активация осколков
-activate(position: Vector3, impulseStreight: number = 10): void{
-    this.mesh.forEach((fragment, index) => {
-        const safeY = Math.max(position.y, 1) + 2;
-        const newPosition = new Vector3(
-            position.x + (Math.random() * 4 - 2),
-            safeY,
-            position.z + (Math.random() * 4 - 2),
-        );
-        // Перемещаем меш
-        fragment.position = newPosition;
-        //  ПЕРЕСОЗДАЁМ физическое тело в новой позиции
-        const oldBody = this.bodies[index];
-        const newPhysicsAggregate = new PhysicsAggregate(fragment, PhysicsShapeType.BOX, {mass: 1});
-        this.bodies[index] = newPhysicsAggregate.body;
-        //  Настраиваем маски коллизий
-        const fragmentShape = newPhysicsAggregate.shape;
-        fragmentShape.filterMembershipMask = 0b0000;
-        fragmentShape.filterCollideMask = 0b0010;
-        //  Показываем
-        fragment.setEnabled(true);
-        //  Устанавливаем скорость разлёта
-        const velocityVector = new Vector3(
-            Math.random() * 20 - 10,  
-            Math.random() * 10 + 5,   
-            Math.random() * 20 - 10
-        );
-        newPhysicsAggregate.body.setLinearVelocity(velocityVector);
-    })
-}
+    // Активация осколков: только перемещаем меш и включаем его
+    activate(position: Vector3, impulseStrength: number = 10): void {
+        this.meshes.forEach((fragmentMesh, index) => {
+            // Вычисляем безопасную Y-позицию
+            const safeY = Math.max(position.y, 1) + 2;
 
-    // Деактивация осколков
-    deactivate(){
-        this.mesh.forEach((fragment, index) => {
-            fragment.setEnabled(false);
+            // Вычисляем новую позицию
+            const newPosition = new Vector3(
+                position.x + (Math.random() * 4 - 2),
+                safeY,
+                position.z + (Math.random() * 4 - 2)
+            );
 
-            // Сбрасываем скорость
-            const body = this.bodies[index];
+            // --- КЛЮЧЕВОЙ ШАГ ---
+            // 1. Скрываем меш
+            fragmentMesh.setEnabled(false);
+
+            // 2. Перемещаем меш в новую позицию
+            fragmentMesh.position = newPosition;
+
+            // 3. Получаем старое тело (созданное в конструкторе)
+            const body = this.aggregates[index].body;
+
+            // 4. Сбрасываем скорость
             body.setLinearVelocity(Vector3.Zero());
             body.setAngularVelocity(Vector3.Zero());
-        })
+
+            // 5. Показываем меш — теперь он будет двигаться вместе с телом
+            fragmentMesh.setEnabled(true);
+
+            // 6. Применяем скорость разлёта (Y всегда > 0 — вверх!)
+            const velocityVector = new Vector3(
+                Math.random() * 20 - 10,
+                Math.random() * 10 + 5,  // [5, 15] — гарантированно вверх
+                Math.random() * 20 - 10
+            );
+            body.setLinearVelocity(velocityVector);
+            // --- КОНЕЦ КЛЮЧЕВОГО ШАГА ---
+        });
     }
 
+    deactivate(): void {
+        this.meshes.forEach((fragmentMesh, index) => {
+            fragmentMesh.setEnabled(false);
+            const body = this.aggregates[index].body;
+            body.setLinearVelocity(Vector3.Zero());
+            body.setAngularVelocity(Vector3.Zero());
+        });
+    }
 
+    dispose(): void {
+        this.aggregates.forEach(agg => agg.dispose());
+        this.meshes = [];
+        this.aggregates = [];
+    }
 }

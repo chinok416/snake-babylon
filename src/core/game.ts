@@ -55,7 +55,7 @@ export class Game {
         const groundPhysics = new PhysicsAggregate(ground, PhysicsShapeType.BOX, {mass: 0}, this.scene)
         const groundShape = groundPhysics.shape;
         groundShape.filterMembershipMask = 0b0010;  // Группа пола
-        groundShape.filterCollideMask = 0b0011;
+        groundShape.filterCollideMask = 0b0001;
 
 
         // СТЕНЫ
